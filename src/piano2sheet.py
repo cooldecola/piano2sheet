@@ -1,11 +1,23 @@
 from cv2 import cv2
 import numpy as np
-
+from matplotlib import pyplot as plt
 
 # just  a function for printing images
 def display_img(title, img):
     cv2.imshow(title, img)
 
+
+def getNextNote(first_note):
+    if first_note == "A#":
+        return "C#"
+    if first_note == "C#":
+        return "D#"
+    if first_note == "D#":
+        return "F#"
+    if first_note == "F#":
+        return "G#"
+    if first_note == "G#":
+        return "A#"
 
 
 #sample piano image from youtube
@@ -88,21 +100,95 @@ for i in range(1, num_labels):
 
 #just for visualization lol
 for i in range(len(final_labels)):
-    x0,y0 = centroids[final_labels[i]]
-    lol = cv2.line(img,(int(x0),0),(int(x0),900),(0,0,255),2)
+    xc,yc = centroids[final_labels[i]]
+    #x1 = stats[final_labels[i], cv2.CC_STAT_LEFT]
+    #del_x = stats[final_labels[i], cv2.CC_STAT_WIDTH]
+    #lol = cv2.line(img,(int(x1),0),(int(x1),900),(0,255,0),1)
+    #lol = cv2.line(img,(int(x1+del_x),0),(int(x1+del_x),900),(0,255,0),1)
+    lol = cv2.line(img,(int(xc),0),(int(xc),900),(0,0,255),1)
     cv2.imshow("lol", lol)
     cv2.waitKey(0)
 
 #Printing out the difference between black keys
 #figure out someway to normalize this data so 
 #it works with all figures
+difference = []
 for i in range(len(final_labels)-1):
     x2,y2 = centroids[final_labels[i+1]]
     x1,y1 = centroids[final_labels[i]]
     diff = x2-x1
+    difference.append(diff)
     print(diff)
 
+#plotting distance between black keys vs centroids of all black keys
+x_axis = []
+for i in range(len(final_labels)-1):
+    x = centroids[final_labels[i]][0]
+    #print(x)
+    x_axis.append(x)
 
+plt.plot(x_axis, difference)
+plt.show()
+
+#checking the difference for the next three notes to figure out
+#which note is being played
+##########
+#! JUST A PROTOTYPE - NEEDS TO BE WOKED ON
+#right now it's hardcoded with numbers (40,20).. but needs to be normalized
+#########
+first_note = None
+if (difference[0] > 40):
+    if (difference[1] > 40):
+        pass
+    else:
+        if (difference[2] > 40):
+            first_note = 'A#'
+            print(first_note)
+
+black_key_dict = {}
+for i in range(len(final_labels)):
+    x = centroids[final_labels[i]][0]
+    black_key_dict[x] = first_note
+    first_note = getNextNote(first_note)
+
+print(black_key_dict)
+
+
+#Labeling all the black keys
+for centroid in black_key_dict:
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    y = 350
+    lol = cv2.line(img,(int(centroid),0),(int(centroid),900),(0,0,255),1)
+    lol = cv2.putText(img, black_key_dict[centroid], (int(centroid), y), font, 0.5, (255,255,0), 2, cv2.LINE_AA)
+    cv2.imshow("lol", lol)
+    cv2.waitKey(0)
+
+##white key labelling
+#! NEED TO IMPLEMENT SPECIAL CONDITION FOR LAST WHITE KEYS 
+white_key_dict = {}
+for i in range(len(final_labels)-1):
+    x = centroids[final_labels[i]][0]
+
+    if (difference[i] > 40):
+        origin = x + difference[i]/2
+        delta_x = difference[i]/4
+        lol = cv2.line(img,(int(origin+delta_x),0), (int(origin+delta_x),900), (0,255,0),1)
+        lol = cv2.line(img,(int(origin-delta_x),0), (int(origin-delta_x),900), (0,255,0),1)
+        cv2.imshow("lol", lol)
+        cv2.waitKey(0)
+    else:
+        delta_x = difference[i]/2
+        lol = cv2.line(img,(int(x+delta_x),0), (int(x+delta_x),900), (0,255,0),1)
+        cv2.imshow("lol", lol)
+        cv2.waitKey(0)
+
+#Using standard threshold to create contrast between white/black keys
+kernel = np.ones((20,1), np.uint8)
+_, th2 = cv2.threshold(crop_blur, 85, 150, cv2.THRESH_BINARY_INV)
+d_im = cv2.dilate(th2, kernel, iterations=2)
+e_im = cv2.erode(d_im, kernel, iterations=2)
+display_img("threshold", d_im)
+display_img("threshold", e_im)
 
 
 #cv2.imshow('cropped',crop_img)

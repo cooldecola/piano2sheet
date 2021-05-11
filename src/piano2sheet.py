@@ -2,7 +2,7 @@ from cv2 import cv2
 import numpy as np
 
 
-
+# just  a function for printing images
 def display_img(title, img):
     cv2.imshow(title, img)
 
@@ -48,19 +48,24 @@ crop_blur = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
 #Using standard threshold to create contrast between white/black keys
 _, th1 = cv2.threshold(crop_blur, 85, 150, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 display_img("threshold", th1)
+
+
 ####################################
-####### using connected component detection algorithm to seperate each individual notes
+####### using connected component detection algorithm to seperate all the black notes
 connectivity = 8
 output = cv2.connectedComponentsWithStats(th1, connectivity, cv2.CV_32S)
 num_labels = output[0]
 labels = output[1]
 stats = output[2]
 centroids = output[3]
+print(centroids.shape)
 
+final_labels = []
+
+#For loop only used for displaying 
 for i in range(1, num_labels):
     if i == 0:
         text = "examining component {}/{} (background)".format(i + 1, num_labels)
-
     else:
         text = "examining component {}/{}".format(i+1, num_labels)
 
@@ -72,7 +77,8 @@ for i in range(1, num_labels):
     area = stats[i, cv2.CC_STAT_AREA]
     (cX, cY) = centroids[i]
     output = th1.copy()
-    if (1000 < area < 2000):
+    if (1000 < area < 2000): #filtering out relavent detections (the ones big enough to be black keys)
+        final_labels.append(i)
         cv2.rectangle(output, (x,y), (x+w, y+h), (0,255,0),3)
         cv2.circle(output, (int(cX), int(cY)), 4, (255,255,0), -1)
         componentMask = (labels == i).astype("uint8") * 255
@@ -80,8 +86,29 @@ for i in range(1, num_labels):
         display_img("Connected Component", componentMask)
         cv2.waitKey(0)
 
+#just for visualization lol
+for i in range(len(final_labels)):
+    x0,y0 = centroids[final_labels[i]]
+    lol = cv2.line(img,(int(x0),0),(int(x0),900),(0,0,255),2)
+    cv2.imshow("lol", lol)
+    cv2.waitKey(0)
+
+#Printing out the difference between black keys
+#figure out someway to normalize this data so 
+#it works with all figures
+for i in range(len(final_labels)-1):
+    x2,y2 = centroids[final_labels[i+1]]
+    x1,y1 = centroids[final_labels[i]]
+    diff = x2-x1
+    print(diff)
+
+
+
 
 #cv2.imshow('cropped',crop_img)
 #display_img("img",img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+
+
+

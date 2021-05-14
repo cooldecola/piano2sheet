@@ -47,6 +47,8 @@ for line in lines:
     x2 = int(x0 - 1500 * (-b))
     y2 = int(y0 - 1500 * (a))
     cv2.line(img, (x1,y1), (x2,y2), (0,0,255),2)
+    display_img("dslkd", img)
+    cv2.waitKey(0)
 
 #sorting list and getting rid of smallest value
 y_cord.sort(reverse=True)

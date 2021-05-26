@@ -4,6 +4,9 @@ import csv
 from mido import Message, MidiFile, MidiTrack
 
 
+def getChord(index, lst):
+    pass
+
 
 midi_note_numbers = {}
 
@@ -55,11 +58,6 @@ mid.tracks.append(track)
 tpb = mid.ticks_per_beat = 900
 
 
-tick1 = int(mido.second2tick(5,tpb,500000)) 
-tick = int(mido.second2tick(10,tpb,500000))
-#print(tick)
-
-
 track.append(Message('program_change', program=12, time=0))
 
 stupid = []
@@ -90,17 +88,48 @@ for i in stupid:
 
 
 for i in range(len(stupid)-1):
-    # if (stupid[i][2] == stupid[i+1][2]):
-    #     pass
 
-    # else:
+    def nextSame(i):
+        if (stupid[i][2] == stupid[i+1][2]):
+            return True
+        else: 
+            return False
+
     beg = stupid[i][2]
     end = stupid[i][3]
     note_num = stupid[i][1] 
     tick_end = int(mido.second2tick(end,tpb,500000))
+    delta = 0.0
 
-    track.append(Message('note_on', note=note_num, velocity=64, time=0))
-    track.append(Message('note_off', note=note_num, velocity=64, time=tick_end))
+
+
+    if (not nextSame(i) and i == 0):
+        track.append(Message('note_on', note=note_num, velocity=64, time=0))
+        track.append(Message('note_off', note=note_num, velocity=64, time=tick_end))
+        delta = stupid[i+1][2] - stupid[i][3]
+
+    if (nextSame(i) and i == 0):
+        pass
+
+    if (nextSame(i) and i != 0):
+        tick_delta = int(mido.second2tick(delta,tpb,500000))
+        tick1 = tick_end
+        tick2 = int(mido.second2tick(stupid[i+1][3],tpb,500000))
+        note1 = note_num
+        note2 = stupid[i+1][1]
+        track.append(Message('note_on', note=note1, velocity=64, time=tick_delta))
+        track.append(Message('note_on', note=note2, velocity=64, time=tick_delta))
+        track.append(Message('note_off', note=note1, velocity=64, time=tick1))
+        track.append(Message('note_off', note=note2, velocity=64, time=tick2))
+        delta = stupid[i+1][2] - stupid[i][3]
+
+    if (not nextSame(i) and i != 0):
+        tick_delta = int(mido.second2tick(delta,tpb,500000))
+        track.append(Message('note_on', note=note_num, velocity=64, time=tick_delta))
+        track.append(Message('note_off', note=note_num, velocity=64, time=tick_end))
+        delt = stupid[i+1][2] - stupid[i][3]
+
+
 
 
 

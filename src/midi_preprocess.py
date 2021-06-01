@@ -4,10 +4,12 @@ import csv
 from mido import Message, MidiFile, MidiTrack
 
 
+#Ignore this! 
 def getChord(index, lst):
     pass
 
 
+#creating a dictionary for "lookup" when associating note name to MIDI note number
 midi_note_numbers = {}
 
 notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
@@ -17,10 +19,6 @@ for octave in range(-2, 8):
         cnt = cnt + 1 
         tmp = note + str(octave)
         midi_note_numbers[tmp] = cnt
-
-
-#print(midi_note_numbers)
-
 
 
 with open('notes_info.csv', newline='') as f:

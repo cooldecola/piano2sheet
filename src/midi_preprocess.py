@@ -80,61 +80,122 @@ for lst in test:
 
 stupid.sort(key=lambda x: x[2])
 
+print(len(stupid))
+
 for i in stupid: 
     print(i)
 
 
+i = 0
+note_list = []
 
-for i in range(len(stupid)-1):
-
+while i < (len(stupid)-1):
+    
     def nextSame(i):
-        if (stupid[i][2] == stupid[i+1][2]):
+        if ( (stupid[i][2] == stupid[i+1][2]) ):
             return True
         else: 
             return False
 
-    beg = stupid[i][2]
-    end = stupid[i][3]
-    note_num = stupid[i][1] 
-    tick_end = int(mido.second2tick(end,tpb,500000))
-    delta = 0.0
+    if (not nextSame(i)):
+        tmp_ls = stupid[i]
+        note_list.append(tmp_ls)
+        i = i + 1
+        print(i)
+
+    if (nextSame(i)):
+        tmp_ls = []
+        while (nextSame(i)):
+            tmp_ls.append(stupid[i])
+            i = i + 1
+            print(i)
+        tmp_ls.append(stupid[i])
+        note_list.append(tmp_ls)
+        i = i+1
+
+    if (i == len(stupid)-2):
+        break
+
+
+for i in note_list: 
+    print(i)
+
+#print(note_list)
 
 
 
-    if (not nextSame(i) and i == 0):
-        track.append(Message('note_on', note=note_num, velocity=64, time=0))
-        track.append(Message('note_off', note=note_num, velocity=64, time=tick_end))
-        delta = stupid[i+1][2] - stupid[i][3]
+# for i in range(len(stupid)-1):
 
-    if (nextSame(i) and i == 0):
-        pass
+#     #local definition 
+#     def nextSame(i):
+#         if ( (stupid[i][2] == stupid[i+1][2]) and (stupid[i][3] == stupid[i+1][3]) ):
+#             return True
+#         else: 
+#             return False
 
-    if (nextSame(i) and i != 0):
-        tick_delta = int(mido.second2tick(delta,tpb,500000))
-        tick1 = tick_end
-        tick2 = int(mido.second2tick(stupid[i+1][3],tpb,500000))
-        note1 = note_num
-        note2 = stupid[i+1][1]
-        track.append(Message('note_on', note=note1, velocity=64, time=tick_delta))
-        track.append(Message('note_on', note=note2, velocity=64, time=tick_delta))
-        track.append(Message('note_off', note=note1, velocity=64, time=tick1))
-        track.append(Message('note_off', note=note2, velocity=64, time=tick2))
-        delta = stupid[i+1][2] - stupid[i][3]
+#     def addChord(i):
+#         tick_delta = int(mido.second2tick(delta,tpb,500000))
+#         track.append(Message('note_on', note=stupid[i][1], velocity=64, time=tick_delta))
+#         print("on" + str(stupid[i][1]) + " delta: " + str(delta))
+#         if (nextSame(i)):
+#             addChord(i+1)
 
-    if (not nextSame(i) and i != 0):
-        tick_delta = int(mido.second2tick(delta,tpb,500000))
-        track.append(Message('note_on', note=note_num, velocity=64, time=tick_delta))
-        track.append(Message('note_off', note=note_num, velocity=64, time=tick_end))
-        delt = stupid[i+1][2] - stupid[i][3]
+#         track.append(Message('note_off', note=stupid[i][1], velocity=64, time=tick_end))
+#         print("off" + str(stupid[i][1]) + " delta: " + str(delta))
 
+#     beg = stupid[i][2]
+#     end = stupid[i][3]
+#     note_num = stupid[i][1] 
+#     tick_end = int(mido.second2tick(end,tpb,500000))
+#     delta = 0.0
 
 
+#     #condition 1 : first not and single note
+#     if (not nextSame(i) and i == 0):
+#         track.append(Message('note_on', note=note_num, velocity=64, time=0))
+#         track.append(Message('note_off', note=note_num, velocity=64, time=tick_end))
+#         delta = stupid[i+1][2] - stupid[i][3]
+
+#     #condition 2 : first notes are chords
+#     if (nextSame(i) and i == 0):
+#         pass
+
+#     #condition 3 : chord but not first notes
+#     if (nextSame(i) and i != 0):
+#         addChord(i)
+#         # tick_delta = int(mido.second2tick(delta,tpb,500000))
+#         # tick1 = tick_end
+#         # tick2 = int(mido.second2tick(stupid[i+1][3],tpb,500000))
+#         # note1 = note_num
+#         # note2 = stupid[i+1][1]
+#         # track.append(Message('note_on', note=note1, velocity=64, time=tick_delta))
+#         # track.append(Message('note_on', note=note2, velocity=64, time=tick_delta))
+#         # track.append(Message('note_off', note=note1, velocity=64, time=tick1))
+#         # track.append(Message('note_off', note=note2, velocity=64, time=tick2))
+#         delta = stupid[i+1][2] - stupid[i][3]
+
+#     if (not nextSame(i) and i != 0):
+#         tick_delta = int(mido.second2tick(delta,tpb,500000))
+#         track.append(Message('note_on', note=note_num, velocity=64, time=tick_delta))
+#         track.append(Message('note_off', note=note_num, velocity=64, time=tick_end))
+#         delt = stupid[i+1][2] - stupid[i][3]
 
 
-# track.append(Message('program_change', program=12, time=0))
-# track.append(Message('note_on', note=64, velocity=64, time=0))
-# track.append(Message('note_on', note=65, velocity=64, time=0))
-# track.append(Message('note_off', note=65, velocity=64, time=tick))
-# track.append(Message('note_off', note=64, velocity=64, time=0))
+
+
+five = int(mido.second2tick(5,tpb,500000))
+three = int(mido.second2tick(3,tpb,500000))
+seven = int(mido.second2tick(7,tpb,500000))
+track.append(Message('program_change', program=12, time=0))
+track.append(Message('note_on', note=65, velocity=64, time=0))
+track.append(Message('note_on', note=70, velocity=64, time=0))
+track.append(Message('note_on', note=75, velocity=64, time=three))
+track.append(Message('note_on', note=76, velocity=64, time=0))
+track.append(Message('note_off', note=76, velocity=64, time=five))
+track.append(Message('note_off', note=75, velocity=64, time=0))
+track.append(Message('note_off', note=70, velocity=64, time=three))
+track.append(Message('note_off', note=65, velocity=64, time=three))
+
+
 
 mid.save('new_song.mid')

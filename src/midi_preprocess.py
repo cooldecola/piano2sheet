@@ -1,17 +1,15 @@
 from PIL.Image import new
 import mido
 import csv
+import pandas as pd 
 from mido import Message, MidiFile, MidiTrack
 
 
-#Ignore this! 
-def getChord(index, lst):
-    pass
-
-
-#creating a dictionary for "lookup" when associating note name to MIDI note number
+# creating a dictionary for "lookup" when associating note name to MIDI note number
 midi_note_numbers = {}
 
+# linking each note on piano to the associated number in MIDI format
+# ref: https://intuitive-theory.com/midi-from-scratch/
 notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 cnt = -1
 for octave in range(-2, 8):
@@ -21,15 +19,15 @@ for octave in range(-2, 8):
         midi_note_numbers[tmp] = cnt
 
 
+# getting rid of all notes that aren't used and 
+# storing them in new_data
 with open('notes_info.csv', newline='') as f:
     reader = csv.reader(f)
     data = list(reader)
 
 new_data = []
-
 for i in range(len(data)):
     ls = data[i]
-    #print(ls)
     sum = ''
     for itm in range(1,len(ls)):
         sum = sum + ls[itm]
@@ -38,164 +36,87 @@ for i in range(len(data)):
         new_data.append(ls)
 
 
-
-test = []
+# getting rid of all NaN values
+cleaned_list = []
 for i in range(len(new_data)):
     a = new_data[i]
     b = list(filter(None, a))
-    test.append(b)
+    cleaned_list.append(b)
 
-
-#print(test)
-
-
+# initializing MIDI file 
 mid = MidiFile()
 track = MidiTrack()
 mid.tracks.append(track)
 
+# ticks per beat = 900 (conventional number for 120 bpm)
 tpb = mid.ticks_per_beat = 900
 
-
-track.append(Message('program_change', program=12, time=0))
-
-stupid = []
-for lst in test:
+# creating a list of notes played in order of sequence
+seq_notes = []
+for lst in cleaned_list:
     note = lst[0]
     lst.pop(0)
 
     for beg, end in zip(lst[::2], lst[1::2]):
-        #tick_beg = int(mido.second2tick(beg,tpb,500000))
-        #tick_end = int(mido.second2tick( (end - beg), tpb ,500000))
         note_num = midi_note_numbers[note]
-        #print(note + " " + str(note_num) + " " + "from " + str(beg) + " to " + str(end))
         tmp = [note, int(note_num), float(beg), float(end)]
-        stupid.append(tmp)
-
-
-        # track.append(Message('note_on', note=note_num, velocity=64, time=tick_beg))
-        # track.append(Message('note_off', note=note_num, velocity=64, time=tick_end))
+        seq_notes.append(tmp)
         
+# creating dataframe for manipulation
+df =  pd.DataFrame(seq_notes)
+df.columns = ['note', 'note_num', 'start', 'end']
 
+#difference column
+df['difference'] = df['end'] - df['start']
 
+# df_full is duplicate of df - except first df contains start
+# and second df contains end
+df_full = df[['note', 'note_num', 'start', 'difference']]
+df_full = df_full.append(df[['note', 'note_num', 'end', 'difference']])
 
-stupid.sort(key=lambda x: x[2])
+# time column is the combination of start and end - deleting all NaN values
+df_full['time'] = df_full['start'].fillna(df_full['end'])
+df_full = df_full.drop('start', axis = 1)
+df_full = df_full.drop('end', axis = 1)
 
-print(len(stupid))
+#sorting df_full in accordance with MIDI file format 
+sorted_df = df_full.sort_values(['time', 'difference'], ascending=[True, False])
 
-for i in stupid: 
-    print(i)
+# calculating the delta times of each note in del_list
+del_list = []
+del_list.append(0)
+time_list = sorted_df['time'].tolist()
+for i in range (len(time_list)-1):
+    del_list.append(time_list[i+1] - time_list[i])
 
+sorted_df['del'] = del_list
+sorted_list = sorted_df.values.tolist()
 
-i = 0
-note_list = []
+# buffer list determines if a 'read' note is a starting one or ending one through
+# use of pop() and append()
+buffer = []
 
-while i < (len(stupid)-1):
-    
-    def nextSame(i):
-        if ( (stupid[i][2] == stupid[i+1][2]) ):
-            return True
-        else: 
-            return False
-
-    if (not nextSame(i)):
-        tmp_ls = stupid[i]
-        note_list.append(tmp_ls)
-        i = i + 1
-        print(i)
-
-    if (nextSame(i)):
-        tmp_ls = []
-        while (nextSame(i)):
-            tmp_ls.append(stupid[i])
-            i = i + 1
-            print(i)
-        tmp_ls.append(stupid[i])
-        note_list.append(tmp_ls)
-        i = i+1
-
-    if (i == len(stupid)-2):
-        break
-
-
-for i in note_list: 
-    print(i)
-
-#print(note_list)
-
-
-
-# for i in range(len(stupid)-1):
-
-#     #local definition 
-#     def nextSame(i):
-#         if ( (stupid[i][2] == stupid[i+1][2]) and (stupid[i][3] == stupid[i+1][3]) ):
-#             return True
-#         else: 
-#             return False
-
-#     def addChord(i):
-#         tick_delta = int(mido.second2tick(delta,tpb,500000))
-#         track.append(Message('note_on', note=stupid[i][1], velocity=64, time=tick_delta))
-#         print("on" + str(stupid[i][1]) + " delta: " + str(delta))
-#         if (nextSame(i)):
-#             addChord(i+1)
-
-#         track.append(Message('note_off', note=stupid[i][1], velocity=64, time=tick_end))
-#         print("off" + str(stupid[i][1]) + " delta: " + str(delta))
-
-#     beg = stupid[i][2]
-#     end = stupid[i][3]
-#     note_num = stupid[i][1] 
-#     tick_end = int(mido.second2tick(end,tpb,500000))
-#     delta = 0.0
-
-
-#     #condition 1 : first not and single note
-#     if (not nextSame(i) and i == 0):
-#         track.append(Message('note_on', note=note_num, velocity=64, time=0))
-#         track.append(Message('note_off', note=note_num, velocity=64, time=tick_end))
-#         delta = stupid[i+1][2] - stupid[i][3]
-
-#     #condition 2 : first notes are chords
-#     if (nextSame(i) and i == 0):
-#         pass
-
-#     #condition 3 : chord but not first notes
-#     if (nextSame(i) and i != 0):
-#         addChord(i)
-#         # tick_delta = int(mido.second2tick(delta,tpb,500000))
-#         # tick1 = tick_end
-#         # tick2 = int(mido.second2tick(stupid[i+1][3],tpb,500000))
-#         # note1 = note_num
-#         # note2 = stupid[i+1][1]
-#         # track.append(Message('note_on', note=note1, velocity=64, time=tick_delta))
-#         # track.append(Message('note_on', note=note2, velocity=64, time=tick_delta))
-#         # track.append(Message('note_off', note=note1, velocity=64, time=tick1))
-#         # track.append(Message('note_off', note=note2, velocity=64, time=tick2))
-#         delta = stupid[i+1][2] - stupid[i][3]
-
-#     if (not nextSame(i) and i != 0):
-#         tick_delta = int(mido.second2tick(delta,tpb,500000))
-#         track.append(Message('note_on', note=note_num, velocity=64, time=tick_delta))
-#         track.append(Message('note_off', note=note_num, velocity=64, time=tick_end))
-#         delt = stupid[i+1][2] - stupid[i][3]
-
-
-
-
-five = int(mido.second2tick(5,tpb,500000))
-three = int(mido.second2tick(3,tpb,500000))
-seven = int(mido.second2tick(7,tpb,500000))
+# starting the track
 track.append(Message('program_change', program=12, time=0))
-track.append(Message('note_on', note=65, velocity=64, time=0))
-track.append(Message('note_on', note=70, velocity=64, time=0))
-track.append(Message('note_on', note=75, velocity=64, time=three))
-track.append(Message('note_on', note=76, velocity=64, time=0))
-track.append(Message('note_off', note=76, velocity=64, time=five))
-track.append(Message('note_off', note=75, velocity=64, time=0))
-track.append(Message('note_off', note=70, velocity=64, time=three))
-track.append(Message('note_off', note=65, velocity=64, time=three))
 
+for i in range(len(sorted_list)):
+    note_num = sorted_list[i][1]
+    note = sorted_list[i][0]
+    time = sorted_list[i][4]
+    tick = int(mido.second2tick(time,tpb,500000))
+    
+    if not buffer: 
+        track.append(Message('note_on', note=note_num, velocity=64, time=tick))
+        buffer.append(sorted_list[i][0])
+
+    elif len(buffer) > 0:
+        if note in buffer:
+            track.append(Message('note_off', note=note_num, velocity=64, time=tick))
+            buffer.remove(note)
+            
+        else: 
+            track.append(Message('note_on', note=note_num, velocity=64, time=tick))
+            buffer.append(note)
 
 
 mid.save('new_song.mid')

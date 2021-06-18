@@ -4,7 +4,6 @@ import csv
 import pandas as pd 
 from mido import Message, MidiFile, MidiTrack
 
-
 # creating a dictionary for "lookup" when associating note name to MIDI note number
 midi_note_numbers = {}
 
@@ -25,6 +24,8 @@ with open('notes_info.csv', newline='') as f:
     reader = csv.reader(f)
     data = list(reader)
 
+remove_dup_list = []
+
 new_data = []
 for i in range(len(data)):
     ls = data[i]
@@ -39,9 +40,43 @@ for i in range(len(data)):
 # getting rid of all NaN values
 cleaned_list = []
 for i in range(len(new_data)):
-    a = new_data[i]
-    b = list(filter(None, a))
-    cleaned_list.append(b)
+    a = new_data[i] # first list 
+    b = list(filter(None, a)) # same list but removed 
+    print(b)
+    b_len = len(b)
+    new_b = [] # new list without extra times
+    new_b.append(b[0]) # adding note info 
+    rnge = len(b[1:b_len]) # length of list without note
+    
+    # case : only two times in list 
+    if rnge == 2:
+        tmp_ls = b[1:b_len]
+        for i in tmp_ls:
+            new_b.append(i)
+        cleaned_list.append(new_b)
+
+    
+    if rnge > 2:
+        list_remove = []
+        new_b = new_b + b[1:b_len]
+        #print(new_b)
+        for i in range(1,b_len-1):
+            abs_sub = float(b[i+1]) - float(b[i])
+            abs_sum = (float(b[i+1]) + float(b[i]))/2
+            percent_diff = 100 * (abs_sub/abs_sum)
+            if percent_diff < 1:
+                list_remove.append(b[i+1])
+                #print(b[i+1])
+        
+        for i in list_remove:
+            new_b.remove(i)
+
+        cleaned_list.append(new_b)
+
+print()
+print()
+for i in cleaned_list: 
+    print(i)
 
 # initializing MIDI file 
 mid = MidiFile()

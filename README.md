@@ -1,7 +1,7 @@
 # piano2sheet
 
 # Introduction
-In this project, the objective is to convert Synthesia videos and videos of piano 
+In this project, the objective is to convert Synthesia videos and videos of piano players that utilize MIDI visualizations to sheet music. 
 
 ## Video Analysis 
 We created a pipeline that allows identification of black and white keys seperately and labels each note.

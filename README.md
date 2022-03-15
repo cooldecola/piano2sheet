@@ -19,7 +19,10 @@ We created a pipeline that allows identification of black and white keys seperat
 <img src="/README_images/MIDI.png" alt="Raw video" width="720"/>
 
 ## Next Steps
-To create web app (android and ios app pending)
++ Code clean-up and refactoring
++ Create sheet music from the transcribed MIDI file
++ Web application creation
++ Android and/or IOS app
 
 ## Technical Details
 
